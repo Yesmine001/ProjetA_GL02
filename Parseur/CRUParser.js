@@ -46,7 +46,7 @@ CRUParser.prototype.parse = function(data){
 }
 
 // <Cours> = '+' UE CRLF 1*(<Créneau> '//' CRLF)
-VpfParser.prototype.cours = function(input){
+CRUParser.prototype.cours = function(input){
     if(input.length === 0) return false;
 
     if(this.check("+", input)){
@@ -71,36 +71,50 @@ VpfParser.prototype.cours = function(input){
     }
 }
 // <UE> = 2*4UPPERALPHA 2DIGIT
-VpfParser.prototype.ue = function(input){
-    
+CRUParser.prototype.ue = function(input){       
+    let curS = this.next(input);
+	matched = curS.match(/[A-Z]{2,4}[0-9]{2}/)   // il y a un problème avec l'ABNF du cc, on peut pas écrire AP1A par ex avec ce système
+    if(matched){
+        return matched[0];
+    }else{
+        this.errMsg("Invalid UE format", input);
+    }
 }
 
 // <Créneau> = ‘1,’ <Type> ‘,’ <Capa> ‘,’ <Horaire> ‘,’ <Index> ‘,’ <Salle>
-VpfParser.prototype.creneau = function(input){
+CRUParser.prototype.creneau = function(input){
     
 }
 
 // <Type> = 1UPPERALPHA 1DIGIT
-VpfParser.prototype.type = function(input){
+CRUParser.prototype.type = function(input){
     
 }
 
 // <Capacité> = ‘P=’ 1*DIGIT
-VpfParser.prototype.capa= function(input){
+CRUParser.prototype.capa= function(input){
     
 }
 
 // <Index> = 1UPPERALPHA 1DIGIT
-VpfParser.prototype.index = function(input){
+CRUParser.prototype.index = function(input){
     
 }
 
 // <Salle> = ‘S=’ 4(UPPERALPHA / DIGIT)
-VpfParser.prototype.salle = function(input){
+CRUParser.prototype.salle = function(input){
+    this.expect("S=", input);
+    let curS = this.next(input);
+    matched = curS.match(/[A-Z0-9]{4}/i)    // /i permet l'insensibilité majuscules/minuscules)
+    if(matched){
+        return matched[0];
+    }else{
+        this.errMsg("Invalid Salle format", input);
+    }
 }
 
 // <Horaire> = ‘H=’ <Jour> WSD <Heure> ‘-’ <Heure>
-VpfParser.prototype.horaire = function(input){
+CRUParser.prototype.horaire = function(input){
    
 }
 
