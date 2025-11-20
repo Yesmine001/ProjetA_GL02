@@ -1,6 +1,6 @@
 const fs = require('fs');
-const colors = require('colors/index.js');
-const VpfParser = require('./VpfParser.js');
+const colors = require('colors');
+const CRUParser = require('./CRUParser.js');
 
 const vg = require('vega');
 const vegalite = require('vega-lite');
@@ -8,8 +8,7 @@ const vegalite = require('vega-lite');
 const cli = require("@caporal/core").default;
 cli
 	.version('vpf-parser-cli')
-	.version('0.07')
-	// check Vpf
+	.version('0.07')	// check Vpf
 	.command('check', 'Check if <file> is a valid Vpf file')
 	.argument('<file>', 'The file to check with Vpf parser')
 	.option('-s, --showSymbols', 'log the analyzed symbol at each step', { validator : cli.BOOLEAN, default: false })
@@ -21,13 +20,13 @@ cli
 				return logger.warn(err);
 			}
 	  
-			var analyzer = new VpfParser(options.showTokenize, options.showSymbols);
+			var analyzer = new CRUParser(options.showTokenize, options.showSymbols);
 			analyzer.parse(data);
 			
-			if(analyzer.errorCount === 0){
-				logger.info("The .vpf file is a valid vpf file".green);
+			if(analyzer.errorCount === 0 && Object.keys(analyzer.parsedCRU).length > 0){
+				logger.info("The .cru file is a valid cru file".green);
 			}else{
-				logger.info("The .vpf file contains error".red);
+				logger.info("The .cru file contains error , contains no UE or is in the wrong format".red);
 			}
 			
 			logger.debug(analyzer.parsedPOI);
@@ -35,7 +34,19 @@ cli
 		});
 			
 	})
-	
+
+
+	.command('printTokens','Prints the tokenized input file')
+	.argument('<file>', 'The file to print tokens from')
+	.action(({args, options, logger}) => {
+		fs.readFile(args.file, 'utf8', function (err,data){
+			if (err){
+				return logger.warn(err);
+			}
+			var analyzer = new CRUParser();
+			analyzer.dataPrinter(data);
+		});
+	})
 	// readme
 	//.command('readme', 'Display the README.txt file')
 	//.action(({args, options, logger}) =>
@@ -53,7 +64,7 @@ cli
 			return logger.warn(err);
 		}
   
-		analyzer = new VpfParser();
+		analyzer = new CRUParser();
 		analyzer.parse(data);
 		
 		if(analyzer.errorCount === 0){
@@ -75,7 +86,11 @@ cli
 	//.alias('avg')
 
 	// abc
-	
+	.command('abc', 'Compute the average note of each POI and export a CSV file')
+	.action(({args, options, logger}) => {
+		logger.info("abc");
+		logger.warn('Test d"erreur')
+	})
 	// average with chart
 	.command('averageChart', 'Compute the average note of each POI and export a Vega-lite chart')
 	.alias('avgChart')
@@ -86,7 +101,7 @@ cli
 			return logger.warn(err);
 		}
   
-		analyzer = new VpfParser();
+		analyzer = new CRUParser();
 		analyzer.parse(data);
 		
 		if(analyzer.errorCount === 0){
