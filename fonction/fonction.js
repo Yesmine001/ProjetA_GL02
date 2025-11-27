@@ -31,6 +31,8 @@ function capaciteSalle(idSalle){
 		}
 	}
     if(capacity === -1){
+
+    if(capacity===-1){
         console.log("La salle n'est pas trouvé");
         return;
     }
