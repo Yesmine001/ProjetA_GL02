@@ -144,7 +144,6 @@ function salleDisponible(heureDebut, heureFin, jour) {
 
     let sallesIndisponibles = new Set();
     let sallesListe = new Set();
-    let sallesDispo = [];
 
 
     if (!heureDebut || !heureFin || !jour) {
@@ -156,28 +155,26 @@ function salleDisponible(heureDebut, heureFin, jour) {
         console.log("Veuillez ajouter un fichier à la base de donnée");
     }
 
-    const debut = toMinutes(heureDebut);
-    const fin = toMinutes(heureFin);
+    const debutMin = toMinutes(heureDebut);
+    const finFin = toMinutes(heureFin);
 
-    for (const [key, value] of Object.entries(analyzer.parsedCRU)) {
-        for (const [key2, value2] of Object.entries(value)) {
+    for (const creneau of Object.values(analyzer.parsedCRU).flat()) {
+        sallesListe.add(creneau.salle);
 
-            let debut2 = toMinutes(value2.heureDebut);
-            let fin2 = toMinutes(value2.heureFin);
+        if (creneau.jour === jour) {
+            const creneauDebutMin = toMinutesArr(creneau.heureDebut);
+            const creneauFinMin = toMinutesArr(creneau.heureFin);
 
-            sallesListe.add(value2.salle);
-
-            if (value2.jour === jour && debut < fin2 && fin > debut2) {
-                sallesIndisponibles.add(value2.salle);
+            // Vérifie si les créneaux se chevauchent
+            if (creneauDebutMin < finFin && creneauFinMin > debutMin) {
+                sallesIndisponibles.add(creneau.salle);
             }
         }
     }
 
-    for (let salle of sallesListe) {
-        if (!sallesIndisponibles.has(salle)) {
-            sallesDispo.push(salle);
-        }
-    }
+    const sallesDispo = [...sallesListe].filter(salle => !sallesIndisponibles.has(salle));
+
+    console.log(`Salles disponibles le ${jour} de ${heureDebut} à ${heureFin} : ${sallesDispo.join(', ')}`.green);
 
     return sallesDispo ;
 }
