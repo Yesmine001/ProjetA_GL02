@@ -20,7 +20,7 @@ CRUParser.prototype.tokenize = function(data){
 
 	// Séparateurs : retour à la ligne, ',', 'P=', 'H=', '-', 'S=', '//', ':'
 	// On garde les séparateurs importants pour le parsing
-    const separator = /(\r\n|,| |:|P=|H=|-|S=|\/\/|\/|\+)/g; // Ajout de '|+' pour le +UE du des cours
+    const separator = /(\r\n|,| |:|\n|P=|H=|-|S=|\/\/|\/|\+)/g; // Ajout de '|+' pour le +UE du des cours
 	data = data.split(separator);
 	data = data.filter((val) => val.trim() !== ''); // Supprime les éléments vides
 

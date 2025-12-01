@@ -2,6 +2,8 @@ const fs = require('fs');
 const colors = require('colors');
 const CRUParser = require('./CRUParser.js');
 
+const {capaciteSalle, sallesCours} = require('../fonction/fonction.js');
+
 const vg = require('vega');
 const vegalite = require('vega-lite');
 
