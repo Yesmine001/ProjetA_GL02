@@ -38,7 +38,7 @@ function capaciteSalle(idSalle){
     }
     // Ici on retourne rien, on l'affiche seulement, si besoin faut changer le return
     
-}
+}}
 
 function toMinutes(hhmm) {
     const [h, m] = hhmm.split(":").map(Number);
