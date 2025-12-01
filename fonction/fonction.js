@@ -15,17 +15,17 @@ function capaciteSalle(idSalle){
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0){
         console.log("Veuillez ajouter un fichier à la base de donnée");
+        return;
     }
 
 	for(const[key,value] of Object.entries(analyzer.parsedCRU)){
-		console.log("UE : %s\n",key);
 		for(const[key2,value2] of Object.entries(value)){
-			// console.log(value2.salle)
-            // Pour que je me fonctionne comment ca marche
+            
+                let currentCap = parseInt(value2.capacite, 10);
 
-            if (value2.salle < idSalle){
-                capacity = value2.capacite;
-            }
+                if (currentCap > capacity) {
+                    capacity = currentCap;
+                }
 		}
 	}
     if(capacity===-1){
@@ -95,9 +95,14 @@ function classementCapacite(){
     let sallesUniques = {};
 
     for (const [ue, creneaux] of Object.entries(analyzer.parsedCRU)) {
-        for (const [id, session] of Object.entries(creneaux)) {
-            if (session.salle && session.capacite) {
-                sallesUniques[session.salle] = parseInt(session.capacite, 10);
+        for (const [id, variable] of Object.entries(creneaux)) {
+            if (variable.salle && variable.capacite) {
+
+                if(sallesUniques[variable.salle] == undefined){
+                    sallesUniques[variable.salle] = parseInt(variable.capacite, 10);
+                }else if (sallesUniques[variable.salle] < parseInt(variable.capacite, 10)){
+                    sallesUniques[variable.salle] = parseInt(variable.capacite, 10);
+                }
             }
         }
     }
