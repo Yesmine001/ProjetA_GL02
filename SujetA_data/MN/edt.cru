@@ -1,6 +1,6 @@
 EDT.CRU - Test
-V�rifier ce qui se passe en cas de s�ance li�e avec salles multiples :
-Comportement souhait� : Si 2 seances li�e avec deux salles chacunes
+V rifier ce qui se passe en cas de s ance li e avec salles multiples :
+Comportement souhait  : Si 2 seances li e avec deux salles chacunes
 Seance 1 : salle 1 et 2 - Seance 2 : salle 3 et 4
 on doit avoir :
 +UVUV
@@ -33,7 +33,7 @@ Seance 1 S=2 / Seance2 S=4
 1,T1,P=26,H=V 14:00-18:00,F2,S=P103//
 1,T2,P=26,H=J 14:00-18:00,F2,S=P103//
 +MATH02
-1,C1,P=96,H=L 14:00-16:00,F1,S=A002/L :-0:00,F,S=//
+1,C1,P=96,H=L 14:00-16:00,F1,S=A002//
 1,D1,P=25,H=MA 13:00-14:00,F1,S=B210/L 16:00-18:00,F1,S=B210//
 1,D2,P=25,H=V 13:00-14:00,F1,S=B210/J 14:00-16:00,F1,S=B210//
 1,D3,P=25,H=MA 14:00-16:00,F1,S=B210/ME 18:00-19:00,F1,S=B210//
@@ -316,7 +316,7 @@ Seance 1 S=2 / Seance2 S=4
 1,C1,P=24,H=V 8:00-10:00,F1,S=S101//
 1,D1,P=24,H=V 10:00-12:00,F1,S=D101//
 
-Page g�n�r�e en : 1.1899800300598 sec
+Page g n r e en : 1.1899800300598 sec
 
 
 

@@ -1,5 +1,6 @@
 var Creneau = require('./Creneau');
-
+var fonction = require('../fonction/fonction.js');
+console.log("CRUParser.js loaded");
 
 // CRUParser
 
@@ -53,6 +54,9 @@ CRUParser.prototype.parse = function(data){
 	}
 	// La boucle se fait dans la fonction cours() maintenant, car il n'y a plus de symbole de fin .
 	this.cours(tData);
+	if (fonction.verifierRecouvrements(this)){
+			this.errMsg("Some creneaux overlaps.","");
+		}
 	if(tData.length > 0) {
 	    this.errMsg("Unused tokens remaining, file incomplete or malformed", tData);
 	}
@@ -119,7 +123,6 @@ CRUParser.prototype.cours = function(input){
         if(input.length > 0){
             this.cours(input);
         }
-
         return true;
     }
 }

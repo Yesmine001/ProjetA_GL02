@@ -1,7 +1,5 @@
-const path = require('path');
-const CRUParser = require('../Parseur/CRUParser');
+const CRUParser = require('../Parseur/CRUParser.js');
 
-let analyzer = new CRUParser();
 
 function parseFile() {
     // A completer plus tardd
@@ -243,7 +241,7 @@ function classementCapacite(){
         for (const [id, variable] of Object.entries(creneaux)) {
             if (variable.salle && variable.capacite) {
 
-                if(sallesUniques[variable.salle] == undefined){
+                if(sallesUniques[variable.salle] === undefined){
                     sallesUniques[variable.salle] = parseInt(variable.capacite, 10);
                 }else if (sallesUniques[variable.salle] < parseInt(variable.capacite, 10)){
                     sallesUniques[variable.salle] = parseInt(variable.capacite, 10);
