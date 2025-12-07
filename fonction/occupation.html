@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Graphique Occupation</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body>
+  <h1>Taux d'occupation des salles</h1>
+  <div id="monGraphique"></div>
+
+  <script>
+    const spec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "description": "Taux d'occupation",
+      "width": 800,
+      "height": 400,
+      
+      "data": { "url": "fonction/occupation.json" }, 
+      
+      "mark": "bar",
+      "encoding": {
+        "x": { "field": "nom_salle", "type": "nominal", "sort": "-y", "axis": {"title": "Salles"} },
+        "y": { "field": "taux_occupation", "type": "quantitative", "axis": {"title": "Occupation (%)"} },
+        "color": { "field": "taux_occupation", "type": "quantitative", "scale": {"scheme": "orangered"} },
+        "tooltip": [
+          {"field": "nom_salle", "title": "Salle"},
+          {"field": "taux_occupation", "title": "Taux (%)"}
+        ]
+      }
+    };
+    vegaEmbed('#monGraphique', spec);
+  </script>
+</body>
+</html>

@@ -229,7 +229,7 @@ function verifierRecouvrements(analyzer) {
     return hasRecouvrement;
 }
 
-function classementCapacite(){
+function classementCapacite(analyzer){
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez d'abord ajouter un fichier en entrée.".red);
         return;
@@ -264,12 +264,100 @@ function classementCapacite(){
     return tableauSalles;
 }
 
+function tauxOccupation(analyzer){
+    if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
+        console.log("Veuillez d'abord ajouter un fichier à la base de données.");
+        return;
+    }
+
+    let sallesOccupation = {};
+    let jourSemaine = {};
+    let dataVega = []
+
+    for (const creneau of Object.values(analyzer.parsedCRU).flat()) {
+        const heureDebut=toMinutesArr(creneau.heureDebut);
+        const heureFin=toMinutesArr(creneau.heureFin);
+        const duree= heureFin-heureDebut;
+        const salle = creneau.salle;
+        const jour = creneau.jour;
+
+        if (!sallesOccupation[salle]) {
+            sallesOccupation[salle] = 0;
+        }
+
+        sallesOccupation[salle] += duree;
+
+        if (!jourSemaine[jour]){
+            jourSemaine[jour] = [heureDebut, heureFin];
+        }
+        if(jourSemaine[jour][0]>heureDebut){
+            jourSemaine[jour][0]=heureDebut;
+        }
+        if(jourSemaine[jour][1]<heureFin){
+            jourSemaine[jour][1]=heureFin;
+        }
+    }
+
+    let totalSemaine = 0;
+    for(const jour of Object.values(jourSemaine)){
+        const debutJour = jour[0];
+        const finJour = jour[1];
+        const duree = finJour-debutJour;
+
+        totalSemaine += duree;
+    }
+
+    for (const salle in sallesOccupation) {
+        const pourcentage = (sallesOccupation[salle] / totalSemaine) * 100;
+        
+        sallesOccupation[salle] = pourcentage.toFixed(2);
+
+        dataVega.push({
+            "nom_salle": salle,
+            "taux_occupation": parseFloat(pourcentage.toFixed(2))
+        });
+    }
+
+    const cheminJson = path.join(__dirname, 'occupation.json'); 
+    const cheminHtml = path.join(__dirname, 'occupation.html');
+
+    try {
+        fs.writeFileSync(cheminJson, JSON.stringify(dataVega, null, 2));
+        console.log(`Fichier json généré ici : ${cheminJson}`);
+    } catch (err) {
+        console.error("Erreur d'écriture :", err);
+    }
+
+    let commande;
+    
+    switch (process.platform) { 
+        case 'darwin': // Mac
+            commande = `open "${cheminHtml}"`;
+            break;
+        case 'win32': // Windows
+            commande = `start "" "${cheminHtml}"`;
+            break;
+        default: // Linux
+            commande = `xdg-open "${cheminHtml}"`;
+    }
+
+    console.log(`Ouverture du graphique : ${cheminHtml}`);
+
+    exec(commande, (error) => {
+        if (error) {
+            console.error("Erreur lors de l'ouverture automatique :", error);
+            console.log("Veuillez ouvrir 'occupation.html' manuellement.");
+        }
+    });
+
+}
+
 module.exports = {
-    parseFile,
     capaciteSalle,
     sallesCours,
     disponibilitesSalle,
     sallesDisponibles,
     classementCapacite,
-    verifierRecouvrements
+    verifierRecouvrements,
+    tauxOccupation
 }
