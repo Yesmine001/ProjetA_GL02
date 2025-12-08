@@ -135,7 +135,6 @@ cli
 						tauxOccupation(mainAnalyzer)
 						break;
           			case "icalendar" :
-						// --- LOGIQUE ICALENDAR CORRIGÉE POUR LE MODE INTERACTIF ---
 						if (rest.length < 3) {
 							logger.warn("Arguments manquants. Usage : icalendar AAAA-MM-JJ_start AAAA-MM-JJ_end UE1 [UE2 ...] [filename.ics]")
 							break;
@@ -151,9 +150,8 @@ cli
 						let outputName = 'schedule_export.ics';
 						let uesList = rest.slice(2);
 						
-						// On vérifie si le dernier argument est un nom de fichier (finissant par .ics)
 						if (uesList.length > 0 && uesList[uesList.length - 1].toLowerCase().endsWith('.ics')) {
-							outputName = uesList.pop(); // Retire et utilise le dernier argument comme nom de fichier
+							outputName = uesList.pop();
 						}
 						
 						if (uesList.length === 0) {
@@ -161,10 +159,8 @@ cli
 						    break;
 						}
 
-						// Appel correct avec l'analyzer, les dates, les UEs (liste), et le nom de fichier
 						genererIcal(startDate, endDate, uesList, outputName, mainAnalyzer);
 						break;
-						// --- FIN LOGIQUE ICALENDAR CORRIGÉE ---
 
 					case 'sallesCours':
 						if (!rest[0]){
@@ -179,7 +175,6 @@ cli
 						break;
 
 					case 'dispoSalle':
-						// L'heure de début et de fin sont optionnelles (rest[1] et rest[2])
 						if (!rest[0]){
 							logger.warn("No argument selected, please enter a room to search for.")
 							break;
@@ -188,7 +183,6 @@ cli
 							logger.warn("No data parsed, please include at least a single .cru file.")
 							break;
 						}
-						// CORRECTION: Passer les arguments optionnels à la fonction
 						disponibilitesSalle(mainAnalyzer, rest[0], rest[1], rest[2])
 						break;
 						
@@ -209,7 +203,7 @@ cli
 							logger.warn("No data parsed, please include at least a single .cru file.")
 							break;
 						}
-						// CORRECTION : Appeler sallesDisponibles(analyzer, jour, hDeb, hFin)
+						
 						sallesDisponibles(mainAnalyzer, rest[0], rest[1], rest[2])
 						break;
 
