@@ -1,19 +1,18 @@
+const fs = require('fs');
 const path = require('path');
 const CRUParser = require('../Parseur/CRUParser'); 
 const ICalendar = require('../Parseur/ICalendar'); 
 
 let analyzer = new CRUParser(); // Instance Globale, désormais exposée
+const { exec } = require('child_process');
+const Creneau = require('../Parseur/Creneau.js');
 
-function parseFile() {
-    // A completer plus tardd
-}
+function capaciteSalle(analyzer, idSalle) {
 
-function capaciteSalle(idSalle) {
-
-    if (!idSalle) console.log("L'argument rentré est invalide");
+    if (!idSalle) console.log("L'argument rentré est invalide".red);
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
-        console.log("Veuillez ajouter un fichier à la base de donnée");
+        console.log("Veuillez ajouter un fichier en entrée".red);
         return;
     }
 
@@ -22,7 +21,7 @@ function capaciteSalle(idSalle) {
     );
 
     if (creneauxSalle.length === 0) {
-        console.log("Salle introuvable dans les créneaux");
+        console.log("Salle introuvable".red);
         return;
     }
 
@@ -32,22 +31,24 @@ function capaciteSalle(idSalle) {
 
     console.log(`La capacité maximale de la salle ${idSalle} est de ${capacity} personnes.`);
 
+    return capacity;
+
 }
 
-function sallesCours(cours) {
+function sallesCours(analyzer, cours) {
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
-        console.log("Veuillez ajouter un fichier à la base de donnée");
+        console.log("Veuillez ajouter un fichier en entrée".red);
         return;
     }
 
     if (!cours) {
-        console.log("L'argument rentré est invalide");
+        console.log("L'argument rentré est invalide".red);
         return;
     }
 
     if (!analyzer.parsedCRU[cours]) {
-        console.log(`Les cours ${cours} est inconnu`);
+        console.log(`Le cours ${cours} est inconnu`.red);
         return;
     }
 
@@ -55,6 +56,8 @@ function sallesCours(cours) {
 
     // Affichage des salles
     console.log(`Les salles pour le cours ${cours} sont : ${salles.join(', ')}`);
+
+    return salles
 }
 
 
@@ -71,26 +74,44 @@ function toMinutes(hhmm) {
 
 
 // Renvoie les disponibilités d'une salle 
-function disponibilitesSalle(salle, heureDebut="8:00", heureFin="20:00") {
-    
+function disponibilitesSalle(analyzer, salle, heureDebut = "8:00", heureFin = "20:00") {
+
     if (!salle) {
-        console.log("L'argument rentré est invalide");
+        console.log("L'argument rentré est invalide".red);
         return;
     }
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
-        console.log("Veuillez ajouter un fichier à la base de donnée");
+        console.log("Veuillez ajouter un fichier en entrée".red);
         return;
     }
 
-    const jours = ['L', 'MA', 'ME', 'J', 'V', 'S', 'D'];
-    const debut = toMinutes(heureDebut);
-    const fin = toMinutes(heureFin);
+    // Validation des arguments heureDebut et heureFin
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(heureDebut) || !timeRegex.test(heureFin)) {
+        console.log("Format invalide. Veuillez utiliser le format HH:MM.");
+        return;
+    }
+
+    // Vérifie que la salle existe dans les créneaux
+    const sallesExistantes = new Set(Object.values(analyzer.parsedCRU).flat().map(creneau => creneau.salle));
+    if (!sallesExistantes.has(salle)) {
+        console.log(`La salle ${salle} est inconnue`.red);
+        return;
+    }
+
+    const debutMin = toMinutes(heureDebut);
+    const finMin = toMinutes(heureFin);
+
+    if (debutMin >= finMin) {
+        console.log("L'heure de début doit être avant l'heure de fin".red);
+        return;
+    }
 
     let disponibilites = {};
 
-    for (let jour of jours) {
-        let currentTimeMin = debut;
+    for (let jour of Creneau.jours) {
+        let currentTimeMin = debutMin;
         disponibilites[jour] = [];
 
         // Récupérer les créneaux pour la salle et le jour donnés
@@ -116,17 +137,17 @@ function disponibilitesSalle(salle, heureDebut="8:00", heureFin="20:00") {
 
 
         // On gère jusque fin de journée
-        if (currentTimeMin < fin) {
+        if (currentTimeMin < finMin) {
             disponibilites[jour].push({
                 debut: `${Math.floor(currentTimeMin / 60)}:${String(currentTimeMin % 60).padStart(2, '0')}`,
-                fin: `${Math.floor(fin / 60)}:${String(fin % 60).padStart(2, '0')}`
+                fin: `${Math.floor(finMin / 60)}:${String(finMin % 60).padStart(2, '0')}`
             });
         }
 
     }
 
     // Affichage des disponibilités
-    for (let jour of jours) {
+    for (let jour of Creneau.jours) {
         console.log(`Disponibilités pour la salle ${salle} - ${jour} :`.green);
         if (disponibilites[jour].length === 0) {
             console.log("Aucune disponibilité".red);
@@ -137,27 +158,47 @@ function disponibilitesSalle(salle, heureDebut="8:00", heureFin="20:00") {
         }
         console.log("");
     }
+
 }
 
 
 
-function salleDisponible(heureDebut, heureFin, jour) {
+function sallesDisponibles(analyzer, jour, heureDebut, heureFin) {
 
     let sallesIndisponibles = new Set();
     let sallesListe = new Set();
 
 
     if (!heureDebut || !heureFin || !jour) {
-        console.log("erreur dans les arguments");
+        console.log("Erreur dans les arguments".red);
         return;
     }
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
-        console.log("Veuillez ajouter un fichier à la base de donnée");
+        console.log("Veuillez ajouter un fichier en entrée".red);
+        return;
+    }
+
+    // Validation des arguments jour et heures
+    if (Creneau.jours.indexOf(jour) === -1) {
+        console.log("Invalid day argument");
+        return;
+    }
+
+    // Validation des arguments heureDebut et heureFin
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(heureDebut) || !timeRegex.test(heureFin)) {
+        console.log("Format invalide. Veuillez utiliser le format HH:MM.");
+        return;
     }
 
     const debutMin = toMinutes(heureDebut);
     const finFin = toMinutes(heureFin);
+
+    if (debutMin >= finFin) {
+        console.log("L'heure de début doit être avant l'heure de fin".red);
+        return;
+    }
 
     for (const creneau of Object.values(analyzer.parsedCRU).flat()) {
         sallesListe.add(creneau.salle);
@@ -173,16 +214,16 @@ function salleDisponible(heureDebut, heureFin, jour) {
         }
     }
 
-    const sallesDispo = [...sallesListe].filter(salle => !sallesIndisponibles.has(salle));
+    const sallesDispo = [...sallesListe].filter(salle => !sallesIndisponibles.has(salle)).sort();
 
     console.log(`Salles disponibles le ${jour} de ${heureDebut} à ${heureFin} : ${sallesDispo.join(', ')}`.green);
 
-    return sallesDispo ;
+    return sallesDispo;
 }
 
-function verifierRecouvrements() {
+function verifierRecouvrements(analyzer) {
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
-        console.log("Veuillez ajouter un fichier à la base de donnée");
+        console.log("Veuillez ajouter un fichier en entrée".red);
         return false;
     }
 
@@ -193,7 +234,7 @@ function verifierRecouvrements() {
             if (!creneauxSalles.has(creneau.salle)) {
                 creneauxSalles.set(creneau.salle, []);
             }
-            creneauxSalles.get(creneau.salle).push({cours: ue, ...creneau});
+            creneauxSalles.get(creneau.salle).push({ cours: ue, ...creneau });
         }
     }
 
@@ -225,9 +266,9 @@ function verifierRecouvrements() {
     return hasRecouvrement;
 }
 
-function classementCapacite(){
+function classementCapacite(analyzer) {
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
-        console.log("Veuillez d'abord ajouter un fichier à la base de données.");
+        console.log("Veuillez d'abord ajouter un fichier en entrée.".red);
         return;
     }
 
@@ -237,9 +278,9 @@ function classementCapacite(){
         for (const [id, variable] of Object.entries(creneaux)) {
             if (variable.salle && variable.capacite) {
 
-                if(sallesUniques[variable.salle] == undefined){
+                if (sallesUniques[variable.salle] === undefined) {
                     sallesUniques[variable.salle] = parseInt(variable.capacite, 10);
-                }else if (sallesUniques[variable.salle] < parseInt(variable.capacite, 10)){
+                } else if (sallesUniques[variable.salle] < parseInt(variable.capacite, 10)) {
                     sallesUniques[variable.salle] = parseInt(variable.capacite, 10);
                 }
             }
@@ -252,7 +293,7 @@ function classementCapacite(){
 
     tableauSalles.sort((a, b) => b.cap - a.cap);
 
-    console.log("--- Classement des salles par capacité (Décroissant) ---");
+    console.log("--- Classement des salles par capacité (Décroissant) ---".green);
     tableauSalles.forEach(salle => {
         console.log(`Salle : ${salle.nom} - Capacité : ${salle.cap}`);
     });
@@ -267,7 +308,7 @@ function classementCapacite(){
  * @param {Array<string>} ues - Liste des UEs à inclure.
  * @param {string} outputFilename - Nom du fichier de sortie (nouvel argument).
  */
-function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename) {
+function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename, analyzer) {
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez ajouter un fichier à la base de donnée");
         return;
@@ -320,14 +361,108 @@ function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename) {
 }
 
 
+function tauxOccupation(analyzer) {
+    if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
+        console.log("Veuillez d'abord ajouter un fichier à la base de données.");
+        return;
+    }
+
+    let sallesOccupation = {};
+    let jourSemaine = {};
+    let dataVega = []
+
+    for (const creneau of Object.values(analyzer.parsedCRU).flat()) {
+        const heureDebut = toMinutesArr(creneau.heureDebut);
+        const heureFin = toMinutesArr(creneau.heureFin);
+        const duree = heureFin - heureDebut;
+        const salle = creneau.salle;
+        const jour = creneau.jour;
+
+        if (!sallesOccupation[salle]) {
+            sallesOccupation[salle] = 0;
+        }
+
+        sallesOccupation[salle] += duree;
+
+        if (!jourSemaine[jour]) {
+            jourSemaine[jour] = [heureDebut, heureFin];
+        }
+        if (jourSemaine[jour][0] > heureDebut) {
+            jourSemaine[jour][0] = heureDebut;
+        }
+        if (jourSemaine[jour][1] < heureFin) {
+            jourSemaine[jour][1] = heureFin;
+        }
+    }
+
+    let totalSemaine = 0;
+    for (const jour of Object.values(jourSemaine)) {
+        const debutJour = jour[0];
+        const finJour = jour[1];
+        const duree = finJour - debutJour;
+
+        totalSemaine += duree;
+    }
+
+
+    for (const salle in sallesOccupation) {
+        const pourcentage = (sallesOccupation[salle] / totalSemaine) * 100;
+
+        sallesOccupation[salle] = pourcentage.toFixed(2);
+
+        dataVega.push({
+            "nom_salle": salle,
+            "taux_occupation": parseFloat(pourcentage.toFixed(2))
+        });
+    }
+
+    const cheminData = path.join(__dirname, 'data_occupation.js');
+    const cheminHtml = path.join(__dirname, 'occupation.html');
+
+
+    try {
+        const contenuFichier = `var dataOccupation = ${JSON.stringify(dataVega, null, 2)};`;
+
+        fs.writeFileSync(cheminData, contenuFichier);
+        console.log(`Fichier de données JS généré ici : ${cheminData}`);
+    } catch (err) {
+        console.error("Erreur d'écriture :", err);
+    }
+
+
+    let commande;
+
+    switch (process.platform) {
+        case 'darwin': // Mac
+            commande = `open "${cheminHtml}"`;
+            break;
+        case 'win32': // Windows
+            commande = `start "" "${cheminHtml}"`;
+            break;
+        default: // Linux
+            commande = `xdg-open "${cheminHtml}"`;
+    }
+
+
+    console.log(`Ouverture du graphique : ${cheminHtml}`);
+
+    exec(commande, (error) => {
+        if (error) {
+            console.error("Erreur lors de l'ouverture automatique :", error);
+            console.log("Veuillez ouvrir 'occupation.html' manuellement.");
+        }
+    });
+
+}
+
 module.exports = {
-    parseFile,
     capaciteSalle,
     sallesCours,
     disponibilitesSalle,
-    salleDisponible,
+    sallesDisponibles,
     classementCapacite,
     verifierRecouvrements,
     genererIcal,
-    analyzer // EXPORT DE L'INSTANCE GLOBALE
+    analyzer, // EXPORT DE L'INSTANCE GLOBALE
+    tauxOccupation
 }

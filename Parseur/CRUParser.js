@@ -1,5 +1,6 @@
 var Creneau = require('./Creneau');
-
+var fonction = require('../fonction/fonction.js');
+console.log("CRUParser.js loaded");
 
 // CRUParser
 
@@ -51,10 +52,11 @@ CRUParser.prototype.parse = function(data){
 	if(this.showTokenize){
 		console.log(tData);
 	}
-	console.log(tData)
 	// La boucle se fait dans la fonction cours() maintenant, car il n'y a plus de symbole de fin .
 	this.cours(tData);
-	this.getParsedCRU()
+	if (fonction.verifierRecouvrements(this)){
+			this.errMsg("Some creneaux overlaps.","");
+		}
 	if(tData.length > 0) {
 	    this.errMsg("Unused tokens remaining, file incomplete or malformed", tData);
 	}
@@ -85,7 +87,6 @@ CRUParser.prototype.cours = function(input){
     if(this.check("+", input)){
         this.expect("+", input);
         let ueName = this.ue(input); // Récupère le nom de l'UE
-		console.log(ueName);
 		//Vérification d'erreur OU de l'UE test
 		if(ueName === "UE_ERR") {
 			this.errMsg("Invalid UE name", input);
@@ -128,7 +129,6 @@ CRUParser.prototype.cours = function(input){
         if(input.length > 0){
             this.cours(input);
         }
-
         return true;
     }
 }
@@ -301,7 +301,6 @@ CRUParser.prototype.checkSTR = function(s, input){
 // expect : expect the next symbol to be s.
 CRUParser.prototype.expect = function(s, input){
 	let val = this.next(input);
-	console.log(val);
 	if(s === val){
 		//console.log("Reckognized! "+s)
 		return true;

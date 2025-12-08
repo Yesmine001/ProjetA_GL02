@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Taux d'occupation</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  
+  <script src="data_occupation.js"></script> 
+
+  <style>
+    body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f9f9f9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        color: #333;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 30px;
+    }
+
+    /* Conteneur du graphique */
+    #vis {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Ombre légère */
+    }
+
+    /* La boîte d'information en dessous */
+    .info-box {
+        margin-top: 25px;
+        max-width: 640px;
+        background-color: #e3f2fd; /* Bleu très clair */
+        border-left: 5px solid #2196f3; /* Bordure bleue à gauche */
+        padding: 15px 20px;
+        border-radius: 4px;
+        font-size: 0.95em;
+        line-height: 1.5;
+        color: #0d47a1;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .info-box strong {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Taux d'occupation des salles</h1>
+  
+  <div id="vis"></div>
+
+  <div class="info-box">
+      <strong>&#9432; Information sur le calcul :</strong>
+      Ce graphique représente le taux d'occupation de chaque salle par rapport au nombre total d'heures de cours possibles par semaine.
+  </div>
+
+  <script type="text/javascript">
+    // Script d'affichage du graphique
+    if (typeof dataOccupation === 'undefined') {
+        document.getElementById('vis').innerHTML = "<p style='color:red'>Erreur : Les données n'ont pas été chargées. Vérifiez que data_occupation.js existe.</p>";
+    } else {
+        var spec = {
+          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+          "width": 600,
+          "height": 400,
+          "background": "transparent", // On laisse le CSS gérer le fond
+          "data": { "values": dataOccupation }, 
+          "mark": "bar",
+          "encoding": {
+            "x": {
+                "field": "nom_salle", 
+                "type": "nominal", 
+                "axis": {"labelAngle": -45}, 
+                "title": "Salles"
+            },
+            "y": {
+                "field": "taux_occupation", 
+                "type": "quantitative", 
+                "title": "Occupation (%)"
+            },
+            "color": {
+                "field": "taux_occupation", 
+                "type": "quantitative",
+                "scale": {"scheme": "orangered"},
+                "legend": {"title": "Taux (%)"}
+            },
+            "tooltip": [
+                {"field": "nom_salle", "title": "Salle"},
+                {"field": "taux_occupation", "title": "Taux (%)"}
+            ]
+          }
+        };
+        vegaEmbed('#vis', spec, {actions: false}); // 'actions: false' retire les 3 petits points (...) si tu veux un rendu plus propre
+    }
+  </script>
+</body>
+</html>
