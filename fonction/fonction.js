@@ -2,8 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const CRUParser = require('../Parseur/CRUParser'); 
 const ICalendar = require('../Parseur/ICalendar'); 
-
-let analyzer = new CRUParser(); // Instance Globale, désormais exposée
 const { exec } = require('child_process');
 const Creneau = require('../Parseur/Creneau.js');
 
@@ -309,6 +307,8 @@ function classementCapacite(analyzer) {
  * @param {string} outputFilename - Nom du fichier de sortie (nouvel argument).
  */
 function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename, analyzer) {
+    console.log("generer ical test");
+    console.log(dateDebutStr, dateFinStr, ues, outputFilename);
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez ajouter un fichier à la base de donnée");
         return;
@@ -463,6 +463,5 @@ module.exports = {
     classementCapacite,
     verifierRecouvrements,
     genererIcal,
-    analyzer, // EXPORT DE L'INSTANCE GLOBALE
     tauxOccupation
 }

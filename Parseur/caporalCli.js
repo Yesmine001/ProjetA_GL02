@@ -56,7 +56,7 @@ cli
 
 	.command('start','Start the CRU schedule application')
 	.action(({args, options, logger}) => {
-		let helpCmds = ["capaciteMax", "sallesCours", "dispoSalle", "sallesDispo", "classementCapacite", "occupation", "icalendar" "parseFile", "exit","showData"];
+		let helpCmds = ["capaciteMax", "sallesCours", "dispoSalle", "sallesDispo", "classementCapacite", "occupation", "icalendar", "parseFile", "exit","showData"];
 		let helpCmdsDesc = [
 			"Returns the max capacity for a room. Use example : capaciteMax S104. \n At least a single .cru file containing the room needed to search for a room.",
 			"Gives the rooms for a given course. Use case : sallesCours LE02\n At least a single file containing the class to return results.",
@@ -133,29 +133,29 @@ cli
 						}
 						tauxOccupation(mainAnalyzer)
 						break;
-          case "icalendar" :
-            if (!mainAnalyzer.parsedCRU || Object.keys(mainAnalyzer.parsedCRU).length === 0){
+          			case "icalendar" :
+          			    if (!mainAnalyzer.parsedCRU || Object.keys(mainAnalyzer.parsedCRU).length === 0){
 							logger.warn("No data parsed, please include at least a single .cru file.")
 							break;
 						}
-            if (!rest[0]){
-							logger.warn("No argument selected, please enter a lecture to search for.")
+          			    if (!rest[0]){
+							logger.warn("0 : No argument selected, please enter a lecture to search for.")
 							break;
 						}
-            if (!rest[1]){
-							logger.warn("No argument selected, please enter a lecture to search for.")
+          			    if (!rest[1]){
+							logger.warn("1 : No argument selected, please enter a lecture to search for.")
 							break;
 						}
-            if (!rest[2]){
-							logger.warn("No argument selected, please enter a lecture to search for.")
+          			    if (!rest[2]){
+							logger.warn("2 : No argument selected, please enter a lecture to search for.")
 							break;
 						}
-            if (!rest[3]){
-							logger.warn("No argument selected, please enter a lecture to search for.")
+          			    if (!rest[3]){
+							genererIcal(rest[0], rest[1], rest[2], "monEDT" , mainAnalyzer);
 							break;
 						}
-            genererIcal(rest[0], rest[1], rest[2], rest[3], mainAnalyzer);
-            break;
+          			    genererIcal(rest[0], rest[1], rest[2], rest[3], mainAnalyzer);
+          			    break;
 					case 'sallesCours':
 						if (!rest[0]){
 							logger.warn("No argument selected, please enter a lecture to search for.")
