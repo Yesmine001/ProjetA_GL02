@@ -214,6 +214,10 @@ cli
 						}
 						let newParser = new CRUParser()
 						fs.readFile(rest[0], 'utf8', function (err,data){
+							if(err){
+								logger.error("Le fichier .cru passé n'existe pas");
+								return;
+							}
 							newParser.parse(data);
 							if(newParser.errorCount>0){
 								logger.warn("File contains error : Unable to add data, please fix data first")
