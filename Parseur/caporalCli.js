@@ -65,8 +65,8 @@ cli
 			"Returns all the rooms unoccupied for a given moment.\n Usage : sallesDispo ROOM_ID arg1 arg2 arg3\n arguments : arg1 : Day (M,MA,ME,J,V,S,D)\n arg2 : Start time (H:MM)\n arg3 : End time (H:MM)",
 			"Displays all rooms ranked by capacity (descending order). No arguments needed.",
 			"Display a graph showing how much each room is used during the week. No arguments needed.",
-			"Generates an iCalendar (.ics) file for the selected University Courses (UEs) over a specified date range. \n Usage: icalendar [FILE_CRU] AAAA-MM-JJ_start AAAA-MM-JJ_end UE1 UE2 [...] [filename.ics] \n Note: You can pass the .cru file as the first argument, or use 'parseFile' beforehand.",
-            "Parses the given file, if it contains no errors.\n Usage : parseFile PATH_TO_FILE\n Example usage : parseFile ./edt.cru",
+			"Generates an iCalendar (.ics) file for the selected University Courses (UEs) over a specified date range. \n Usage: icalendar FILE_CRU AAAA-MM-JJ_start AAAA-MM-JJ_end UE1 UE2 [...] -o output.ics \n Option: -o/--output <filename> to set the custom output filename.",
+      "Parses the given file, if it contains no errors.\n Usage : parseFile PATH_TO_FILE\n Example usage : parseFile ./edt.cru",
 			"Exit the application. No arguments needed",
 			"Shows all of the currently parsed data. No arguments needed",
 			"",
@@ -135,21 +135,8 @@ cli
 						tauxOccupation(mainAnalyzer)
 						break;
           			case "icalendar" :
-                        // PATCH: Détection et chargement automatique du fichier .cru s'il est fourni en 1er argument
-                        if (rest.length > 0 && rest[0].endsWith('.cru')) {
-                            const filename = rest.shift(); // On retire le fichier des arguments pour la suite
-                            try {
-                                const data = fs.readFileSync(filename, 'utf8');
-                                mainAnalyzer.parse(data);
-                                logger.info(`Fichier ${filename} parsé avec succès.`.green);
-                            } catch (err) {
-                                logger.warn(`Impossible de lire le fichier ${filename} : ${err.message}`.red);
-                                break;
-                            }
-                        }
-
 						if (rest.length < 3) {
-							logger.warn("Arguments manquants. Usage : icalendar [FILE_CRU] AAAA-MM-JJ_start AAAA-MM-JJ_end UE1 [UE2 ...] [filename.ics]")
+							logger.warn("Arguments manquants. Usage : icalendar AAAA-MM-JJ_start AAAA-MM-JJ_end UE1 [UE2 ...] [filename.ics]")
 							break;
 						}
 						if (!mainAnalyzer.parsedCRU || Object.keys(mainAnalyzer.parsedCRU).length === 0) {
@@ -227,14 +214,9 @@ cli
 						}
 						let newParser = new CRUParser()
 						fs.readFile(rest[0], 'utf8', function (err,data){
-							if(err){
-								logger.error("Le fichier .cru passé n'existe pas");
-								return;
-							}
 							newParser.parse(data);
 							if(newParser.errorCount>0){
-								logger.warn("File contains error : Unable to add data, please fix data first")
-								return
+								logger.warn("File contains error(s).")
 							}
 							mainAnalyzer.parse(data)
 						});
