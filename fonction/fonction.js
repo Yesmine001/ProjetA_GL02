@@ -320,6 +320,13 @@ function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename, analyzer) {
         return;
     }
 
+    // Validation stricte du format de date pour éviter le blocage de l'application
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateDebutStr) || !dateRegex.test(dateFinStr)) {
+        console.log("Format de date invalide. Veuillez utiliser le format YYYY-MM-DD (ex: 2025-01-01).".red);
+        return;
+    }
+
     let eventsContent = [];
 
     // 1. Filtrer les créneaux pour les UEs demandées
@@ -347,16 +354,16 @@ function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename, analyzer) {
     }
 
     // 3. Générer le fichier complet et l'écrire
-    const icalFileContent = ICalendar.generateICalFile(eventsContent.join('\n'));
-    
-    // UTILISATION DU NOM DE FICHIER PASSÉ EN ARGUMENT
-    const finalFilename = outputFilename || 'schedule_export.ics';
-
     try {
+        const icalFileContent = ICalendar.generateICalFile(eventsContent.join('\n'));
+        
+        // UTILISATION DU NOM DE FICHIER PASSÉ EN ARGUMENT
+        const finalFilename = outputFilename || 'schedule_export.ics';
+
         require('fs').writeFileSync(finalFilename, icalFileContent); 
         console.log(`Export iCalendar réussi ! Fichier généré : ${finalFilename}`.green);
     } catch (error) {
-        console.log(`Erreur lors de l'écriture du fichier ${finalFilename}: ${error.message}`.red);
+        console.log(`Erreur lors de la génération ou l'écriture du fichier : ${error.message}`.red);
     }
 }
 
