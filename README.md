@@ -71,8 +71,8 @@ info: Description : Display a graph showing how much each room is used during th
 info: Command : icalendar
 info: Description : Generates an iCalendar (.ics) file for the selected University Courses (UEs) over a specified da
 te range.
- Usage: icalendar FILE_CRU AAAA-MM-JJ_start AAAA-MM-JJ_end UE1 UE2 [...] -o output.ics
- Option: -o/--output <filename> to set the custom output filename.
+ Usage: icalendar FILE_CRU AAAA-MM-JJ (start) AAAA-MM-JJ (end) UE1 UE2 [...]  output.ics
+ Option: <filename> to set the custom output filename.
 
 
 info: Command : parseFile
