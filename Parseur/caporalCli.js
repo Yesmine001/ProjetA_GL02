@@ -74,7 +74,13 @@ cli
 		console.log("\n\n\n\n\n")
 		const rl = readline.createInterface({
 			input: process.stdin,
-			output: process.stdout
+			output: process.stdout,
+			completer: (line) => {
+				const completions = 'exit quit capaciteMax classementCapacite occupation icalendar sallesCours dispoSalle sallesDispo parseFile showData'.split(' ');
+				const hits = completions.filter((c) => c.startsWith(line));
+				// Show all completions if none found.
+  				return [hits.length ? hits : completions, line];
+			}
 		});
 		let mainAnalyzer = new CRUParser()
 		logger.info("Interactive mode. Type 'exit' to quit.");
