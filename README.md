@@ -44,9 +44,10 @@ Ensuite pour lancer notre application :
 node Parseur/caporalCli.js start
 ```
 
-Ensuite pour parser :
+Ensuite pour parser un fichier :
 ```bash
-parseFile Parseur/valideEdt.cru
+parseFile Parseur/fichier.cru
+La commande peut être utilisée plusieurs fois d'affilées pour parser plusieurs fichiers.
 ```
 
 Nous pouvons par la suite utiliser des fonctions : 
