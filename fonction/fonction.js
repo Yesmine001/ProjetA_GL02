@@ -327,6 +327,11 @@ function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename, analyzer) {
         return;
     }
 
+    if(new Date(dateDebutStr) > new Date(dateFinStr)){
+        console.log("Erreur : La date de début ne peut pas être postérieur à la date de fin".red);
+        return;
+    }
+
     let eventsContent = [];
 
     // 1. Filtrer les créneaux pour les UEs demandées
