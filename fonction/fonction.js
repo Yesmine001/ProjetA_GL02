@@ -1,17 +1,19 @@
 const fs = require('fs');
 const path = require('path');
-const CRUParser = require('../Parseur/CRUParser'); 
-const ICalendar = require('../Parseur/ICalendar'); 
+const CRUParser = require('../Parseur/CRUParser');
+const ICalendar = require('../Parseur/ICalendar');
 const { exec } = require('child_process');
 const Creneau = require('../Parseur/Creneau.js');
 
 function capaciteSalle(analyzer, idSalle) {
-
-    if (!idSalle) console.log("L'argument rentré est invalide".red);
+    if (!idSalle) {
+        console.log("L'argument rentré est invalide".red);
+        return null;
+    }
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez ajouter un fichier en entrée".red);
-        return;
+        return null;
     }
 
     const creneauxSalle = Object.values(analyzer.parsedCRU).flat().filter(
@@ -20,7 +22,7 @@ function capaciteSalle(analyzer, idSalle) {
 
     if (creneauxSalle.length === 0) {
         console.log("Salle introuvable".red);
-        return;
+        return null;
     }
 
     let capacity = creneauxSalle.reduce((maxCapa, creneau) =>
@@ -30,34 +32,30 @@ function capaciteSalle(analyzer, idSalle) {
     console.log(`La capacité maximale de la salle ${idSalle} est de ${capacity} personnes.`);
 
     return capacity;
-
 }
 
 function sallesCours(analyzer, cours) {
-
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez ajouter un fichier en entrée".red);
-        return;
+        return null;
     }
 
     if (!cours) {
         console.log("L'argument rentré est invalide".red);
-        return;
+        return null;
     }
 
     if (!analyzer.parsedCRU[cours]) {
         console.log(`Le cours ${cours} est inconnu`.red);
-        return;
+        return null;
     }
 
     const salles = [...new Set(analyzer.parsedCRU[cours].map(creneau => creneau.salle))].sort();
 
-    // Affichage des salles
     console.log(`Les salles pour le cours ${cours} sont : ${salles.join(', ')}`);
 
-    return salles
+    return salles;
 }
-
 
 function toMinutesArr(hhmm) {
     const [h, m] = hhmm.map(Number);
@@ -69,33 +67,30 @@ function toMinutes(hhmm) {
     return h * 60 + m;
 }
 
-
-
-// Renvoie les disponibilités d'une salle 
+// Renvoie les disponibilités d'une salle
 function disponibilitesSalle(analyzer, salle, heureDebut = "8:00", heureFin = "20:00") {
-
     if (!salle) {
         console.log("L'argument rentré est invalide".red);
-        return;
+        return null;
     }
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez ajouter un fichier en entrée".red);
-        return;
+        return null;
     }
 
     // Validation des arguments heureDebut et heureFin
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(heureDebut) || !timeRegex.test(heureFin)) {
         console.log("Format invalide. Veuillez utiliser le format HH:MM.");
-        return;
+        return null;
     }
 
     // Vérifie que la salle existe dans les créneaux
     const sallesExistantes = new Set(Object.values(analyzer.parsedCRU).flat().map(creneau => creneau.salle));
     if (!sallesExistantes.has(salle)) {
         console.log(`La salle ${salle} est inconnue`.red);
-        return;
+        return null;
     }
 
     const debutMin = toMinutes(heureDebut);
@@ -103,7 +98,7 @@ function disponibilitesSalle(analyzer, salle, heureDebut = "8:00", heureFin = "2
 
     if (debutMin >= finMin) {
         console.log("L'heure de début doit être avant l'heure de fin".red);
-        return;
+        return null;
     }
 
     let disponibilites = {};
@@ -112,12 +107,10 @@ function disponibilitesSalle(analyzer, salle, heureDebut = "8:00", heureFin = "2
         let currentTimeMin = debutMin;
         disponibilites[jour] = [];
 
-        // Récupérer les créneaux pour la salle et le jour donnés
         let creneauxJour = Object.values(analyzer.parsedCRU).flat().filter(
             creneau => creneau.salle === salle && creneau.jour === jour
         );
 
-        // Trier les créneaux par heure de début
         creneauxJour.sort((a, b) => toMinutesArr(a.heureDebut) - toMinutesArr(b.heureDebut));
 
         for (let creneau of creneauxJour) {
@@ -133,18 +126,15 @@ function disponibilitesSalle(analyzer, salle, heureDebut = "8:00", heureFin = "2
             currentTimeMin = Math.max(currentTimeMin, creneauFinMin);
         }
 
-
-        // On gère jusque fin de journée
         if (currentTimeMin < finMin) {
             disponibilites[jour].push({
                 debut: `${Math.floor(currentTimeMin / 60)}:${String(currentTimeMin % 60).padStart(2, '0')}`,
                 fin: `${Math.floor(finMin / 60)}:${String(finMin % 60).padStart(2, '0')}`
             });
         }
-
     }
 
-    // Affichage des disponibilités
+    // Affichage des disponibilités (inchangé)
     for (let jour of Creneau.jours) {
         console.log(`Disponibilités pour la salle ${salle} - ${jour} :`.green);
         if (disponibilites[jour].length === 0) {
@@ -157,45 +147,41 @@ function disponibilitesSalle(analyzer, salle, heureDebut = "8:00", heureFin = "2
         console.log("");
     }
 
+    // NOUVEAU: retour pour --json
+    return disponibilites;
 }
 
-
-
 function sallesDisponibles(analyzer, jour, heureDebut, heureFin) {
-
     let sallesIndisponibles = new Set();
     let sallesListe = new Set();
 
-
     if (!heureDebut || !heureFin || !jour) {
         console.log("Erreur dans les arguments".red);
-        return;
+        return null;
     }
 
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez ajouter un fichier en entrée".red);
-        return;
+        return null;
     }
 
-    // Validation des arguments jour et heures
     if (Creneau.jours.indexOf(jour) === -1) {
         console.log("Invalid day argument");
-        return;
+        return null;
     }
 
-    // Validation des arguments heureDebut et heureFin
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(heureDebut) || !timeRegex.test(heureFin)) {
         console.log("Format invalide. Veuillez utiliser le format HH:MM.");
-        return;
+        return null;
     }
 
     const debutMin = toMinutes(heureDebut);
-    const finFin = toMinutes(heureFin);
+    const finMin = toMinutes(heureFin);
 
-    if (debutMin >= finFin) {
+    if (debutMin >= finMin) {
         console.log("L'heure de début doit être avant l'heure de fin".red);
-        return;
+        return null;
     }
 
     for (const creneau of Object.values(analyzer.parsedCRU).flat()) {
@@ -205,8 +191,7 @@ function sallesDisponibles(analyzer, jour, heureDebut, heureFin) {
             const creneauDebutMin = toMinutesArr(creneau.heureDebut);
             const creneauFinMin = toMinutesArr(creneau.heureFin);
 
-            // Vérifie si les créneaux se chevauchent
-            if (creneauDebutMin < finFin && creneauFinMin > debutMin) {
+            if (creneauDebutMin < finMin && creneauFinMin > debutMin) {
                 sallesIndisponibles.add(creneau.salle);
             }
         }
@@ -225,7 +210,6 @@ function verifierRecouvrements(analyzer) {
         return false;
     }
 
-    // Recouvrement = une meme salle a deux cours en même temps
     creneauxSalles = new Map();
     for (const [ue, creneaux] of Object.entries(analyzer.parsedCRU)) {
         for (const creneau of creneaux) {
@@ -239,7 +223,6 @@ function verifierRecouvrements(analyzer) {
     let hasRecouvrement = false;
 
     for (const [salle, creneaux] of creneauxSalles.entries()) {
-        // Trier les créneaux par horaire de début
         creneaux.sort((a, b) => {
             return a.debutTotMin - b.debutTotMin;
         });
@@ -267,7 +250,7 @@ function verifierRecouvrements(analyzer) {
 function classementCapacite(analyzer) {
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez d'abord ajouter un fichier en entrée.".red);
-        return;
+        return null;
     }
 
     let sallesUniques = {};
@@ -275,7 +258,6 @@ function classementCapacite(analyzer) {
     for (const [ue, creneaux] of Object.entries(analyzer.parsedCRU)) {
         for (const [id, variable] of Object.entries(creneaux)) {
             if (variable.salle && variable.capacite) {
-
                 if (sallesUniques[variable.salle] === undefined) {
                     sallesUniques[variable.salle] = parseInt(variable.capacite, 10);
                 } else if (sallesUniques[variable.salle] < parseInt(variable.capacite, 10)) {
@@ -301,87 +283,101 @@ function classementCapacite(analyzer) {
 
 /**
  * Génère le fichier iCalendar pour les UEs et la période spécifiées.
- * @param {string} dateDebutStr - Date de début (YYYY-MM-DD).
- * @param {string} dateFinStr - Date de fin (YYYY-MM-DD).
- * @param {Array<string>} ues - Liste des UEs à inclure.
- * @param {string} outputFilename - Nom du fichier de sortie (nouvel argument).
+ * Retourne maintenant un objet (utile pour --json).
  */
 function genererIcal(dateDebutStr, dateFinStr, ues, outputFilename, analyzer) {
     console.log("generer ical test");
     console.log(dateDebutStr, dateFinStr, ues, outputFilename);
+
+    const result = {
+        success: false,
+        output: outputFilename || 'schedule_export.ics',
+        eventsCount: 0,
+        uesFound: [],
+        uesMissing: [],
+        errors: []
+    };
+
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez ajouter un fichier à la base de donnée");
-        return;
-    }
-    
-    // Vérification des arguments (simplifiée, une validation de date plus robuste serait idéale)
-    if (!dateDebutStr || !dateFinStr || !ues || ues.length === 0) {
-        console.log("Arguments manquants ou invalides (dateDebut, dateFin, UEs)");
-        return;
+        result.errors.push("NO_PARSED_DATA");
+        return result;
     }
 
-    // Validation stricte du format de date pour éviter le blocage de l'application
+    if (!dateDebutStr || !dateFinStr || !ues || ues.length === 0) {
+        console.log("Arguments manquants ou invalides (dateDebut, dateFin, UEs)");
+        result.errors.push("INVALID_ARGUMENTS");
+        return result;
+    }
+
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(dateDebutStr) || !dateRegex.test(dateFinStr)) {
         console.log("Format de date invalide. Veuillez utiliser le format YYYY-MM-DD (ex: 2025-01-01).".red);
-        return;
+        result.errors.push("INVALID_DATE_FORMAT");
+        return result;
     }
 
-    if(new Date(dateDebutStr) > new Date(dateFinStr)){
+    if (new Date(dateDebutStr) > new Date(dateFinStr)) {
         console.log("Erreur : La date de début ne peut pas être postérieur à la date de fin".red);
-        return;
+        result.errors.push("START_AFTER_END");
+        return result;
     }
 
     let eventsContent = [];
 
-    // 1. Filtrer les créneaux pour les UEs demandées
     for (let ue of ues) {
         if (analyzer.parsedCRU[ue]) {
+            result.uesFound.push(ue);
+
             for (let creneau of analyzer.parsedCRU[ue]) {
-                // L'UE est déjà sur le créneau (ajouté dans CRUParser.js)
-                
-                // 2. Générer l'événement iCalendar
                 try {
                     const event = ICalendar.generateEvent(creneau, dateDebutStr, dateFinStr);
                     eventsContent.push(event);
                 } catch (error) {
                     console.log(`Erreur lors de la génération de l'événement pour ${ue} : ${error.message}`);
+                    result.errors.push(`EVENT_GEN_ERROR:${ue}:${error.message}`);
                 }
             }
         } else {
             console.log(`Attention : L'UE ${ue} est introuvable.`);
+            result.uesMissing.push(ue);
         }
     }
 
     if (eventsContent.length === 0) {
         console.log("Aucun créneau trouvé pour les critères spécifiés. Fichier non généré.");
-        return;
+        result.errors.push("NO_EVENTS");
+        return result;
     }
 
-    // 3. Générer le fichier complet et l'écrire
     try {
         const icalFileContent = ICalendar.generateICalFile(eventsContent.join('\n'));
-        
-        // UTILISATION DU NOM DE FICHIER PASSÉ EN ARGUMENT
         const finalFilename = outputFilename || 'schedule_export.ics';
 
-        require('fs').writeFileSync(finalFilename, icalFileContent); 
+        fs.writeFileSync(finalFilename, icalFileContent);
         console.log(`Export iCalendar réussi ! Fichier généré : ${finalFilename}`.green);
+
+        result.success = true;
+        result.output = finalFilename;
+        result.eventsCount = eventsContent.length;
+
+        return result;
     } catch (error) {
         console.log(`Erreur lors de la génération ou l'écriture du fichier : ${error.message}`.red);
+        result.errors.push(`WRITE_ERROR:${error.message}`);
+        return result;
     }
 }
-
 
 function tauxOccupation(analyzer) {
     if (!analyzer.parsedCRU || Object.keys(analyzer.parsedCRU).length === 0) {
         console.log("Veuillez d'abord ajouter un fichier à la base de données.");
-        return;
+        return null;
     }
 
     let sallesOccupation = {};
     let jourSemaine = {};
-    let dataVega = []
+    let dataVega = [];
 
     for (const creneau of Object.values(analyzer.parsedCRU).flat()) {
         const heureDebut = toMinutesArr(creneau.heureDebut);
@@ -412,14 +408,11 @@ function tauxOccupation(analyzer) {
         const debutJour = jour[0];
         const finJour = jour[1];
         const duree = finJour - debutJour;
-
         totalSemaine += duree;
     }
 
-
     for (const salle in sallesOccupation) {
         const pourcentage = (sallesOccupation[salle] / totalSemaine) * 100;
-
         sallesOccupation[salle] = pourcentage.toFixed(2);
 
         dataVega.push({
@@ -431,30 +424,26 @@ function tauxOccupation(analyzer) {
     const cheminData = path.join(__dirname, 'data_occupation.js');
     const cheminHtml = path.join(__dirname, 'occupation.html');
 
-
     try {
         const contenuFichier = `var dataOccupation = ${JSON.stringify(dataVega, null, 2)};`;
-
         fs.writeFileSync(cheminData, contenuFichier);
         console.log(`Fichier de données JS généré ici : ${cheminData}`);
     } catch (err) {
         console.error("Erreur d'écriture :", err);
+        // Even if writing fails, return computed data
     }
-
 
     let commande;
-
     switch (process.platform) {
-        case 'darwin': // Mac
+        case 'darwin':
             commande = `open "${cheminHtml}"`;
             break;
-        case 'win32': // Windows
+        case 'win32':
             commande = `start "" "${cheminHtml}"`;
             break;
-        default: // Linux
+        default:
             commande = `xdg-open "${cheminHtml}"`;
     }
-
 
     console.log(`Ouverture du graphique : ${cheminHtml}`);
 
@@ -465,6 +454,8 @@ function tauxOccupation(analyzer) {
         }
     });
 
+    // NOUVEAU: retour pour --json
+    return dataVega;
 }
 
 module.exports = {
@@ -476,4 +467,4 @@ module.exports = {
     verifierRecouvrements,
     genererIcal,
     tauxOccupation
-}
+};
